@@ -10,14 +10,14 @@ import _thread
 import time
 
 # WiFi credentials
-ssid = 'CW'  # Replace with your actual SSID
-password = 'cw42314@' # Replace with your actual password
+ssid = 'WIFI_NAME' 
+password = 'WIFI_PASSWORD' 
 
 # Initialize I2C for BME280 and MCP3008
 i2c = I2C(1, sda=Pin(14), scl=Pin(15), freq=100000)
 spi = SPI(1, sck=Pin(10), mosi=Pin(11), miso=Pin(12), baudrate=100000)
 cs = Pin(13, Pin.OUT)
-cs.value(1)  # Disable chip at start
+cs.value(1) 
 chip = MCP3008(spi, cs)
 
 Vref = 3.3
@@ -25,14 +25,14 @@ bit = 10
 
 # Global variables for rainfall and rain gauge
 rainCount = 0
-accumulatedRainfall = 0.0  # Initialize accumulated rainfall
+accumulatedRainfall = 0.0  
 
 # Semaphore for thread safety
 spLock = _thread.allocate_lock()
 
 # Rain gauge setup on GPIO pin 1
 def core1_task():
-    global rainCount, spLock  # Ensure we write to the global count variable and semaphore
+    global rainCount, spLock 
 
     # Rain Gauge
     rainInput = Pin(1, Pin.IN, Pin.PULL_UP)
@@ -40,14 +40,13 @@ def core1_task():
 
     while True:
         if rainInput.value() == 0 and rainFlag == 1:
-            spLock.acquire()  # Acquire semaphore lock
-            rainCount += 1  # Increment rain count for each tip
-            spLock.release()  # Release semaphore lock
+            spLock.acquire()  
+            rainCount += 1  
+            spLock.release()  
 
-        rainFlag = rainInput.value()  # Update flag to current pin value
-        sleep(0.01)  # Delay to prevent excessive checking and save CPU resources
+        rainFlag = rainInput.value() 
+        sleep(0.01)  
 
-# Start the rain gauge monitoring thread
 _thread.start_new_thread(core1_task, ())
 
 def connect():
@@ -197,7 +196,7 @@ def log_to_csv(temperature, humidity, pressure, rainfall):
         print(f"Error writing to CSV file: {e}")
 
 def serve(connection):
-    global rainCount, accumulatedRainfall, spLock  # Ensure we work with global variables
+    global rainCount, accumulatedRainfall, spLock  
 
     # Ensure CSV file has header
     try:
@@ -222,10 +221,10 @@ def serve(connection):
             pressure = bme.values[1]
             
             # Calculate Rainfall
-            spLock.acquire()  # Acquire semaphore lock
-            accumulatedRainfall += rainCount * 0.5  # Accumulate rainfall
-            rainCount = 0  # Reset rainCount for the next measurement interval
-            spLock.release()  # Release semaphore lock
+            spLock.acquire() 
+            accumulatedRainfall += rainCount * 0.5  
+            rainCount = 0 
+            spLock.release() 
 
             # Log data to CSV
             log_to_csv(temperature, humidity, pressure, accumulatedRainfall)
@@ -236,7 +235,7 @@ def serve(connection):
             client.sendall(response.encode('utf-8'))
             client.close()
             
-            sleep(4)  # Wait before updating again (4 seconds)
+            sleep(4) 
             
         except OSError as err:
             print(f'Error: {err}')
